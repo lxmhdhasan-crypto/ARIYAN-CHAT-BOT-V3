@@ -3,14 +3,14 @@ const fs = require('fs-extra');
 const path = require('path');
 const axios = require('axios');
 
-const 𝗦𝗮𝗮𝗻 𝗘𝘅𝗵𝗮𝘂𝘀𝘁𝗲𝗱 = "𝗦𝗮𝗮𝗻 𝗘𝘅𝗵𝗮𝘂𝘀𝘁𝗲𝗱";
+const nx_210 = "𝗦𝗔𝗔𝗡 𝗘𝗫𝗛𝗔𝗨𝗦𝗧𝗘𝗗";
 
 module.exports = {
     config: {
         name: "balance",
         aliases: ["bal"],
         version: "5.0",
-        author: "Siam Ahmed Saan",
+        author: "𝗦𝗔𝗔𝗡 𝗘𝗫𝗛𝗔𝗨𝗦𝗧𝗘𝗗",
         countDown: 2,
         role: 0,
         description: "View balance card, transfer money, and track 10-day history",
@@ -92,7 +92,7 @@ module.exports = {
             await usersData.set(senderID, { money: (currentMoney - amount).toString() });
             await usersData.set(targetUID, { money: (Number(receiverData.money || 0) + amount).toString() });
 
-            return message.reply(`✅ Transferred $${formatBalance(amount)} to ${receiverData.name}\nSystem Provider: ${𝗦𝗮𝗮𝗻 𝗘𝘅𝗵𝗮𝘂𝘀𝘁𝗲𝗱}`);
+            return message.reply(`✅ Transferred $${formatBalance(amount)} to ${receiverData.name}\nSystem Provider: ${nx_210}`);
         }
 
         const createUniqueCard = async (name, balance, uid) => {
