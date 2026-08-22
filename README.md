@@ -4,7 +4,7 @@
 </p>
 
 <h1 align="center">
-  <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=700&size=32&duration=3000&pause=500&color=7000FF&center=true&vCenter=true&width=435&lines=GOAT-BOT-V3;The+Greatest+Of+All+Time;Next+Gen+Automation" alt="Typing Animation" />
+  <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=700&size=32&duration=3000&pause=500&color=7000FF&center=true&vCenter=true&width=435&lines=SAAN'S-GOAT-BOT-V3;The+Greatest+Of+All+Time;Next+Gen+Automation" alt="Typing Animation" />
 </h1>
 
 <p align="center">
@@ -21,13 +21,13 @@
 </p>
 
 <p align="center">
-  <a href="https://www.facebook.com/xalman.dev">
+  <a href="https://www.facebook.com/siam.ahmed.491801">
     <img src="https://img.shields.io/badge/Facebook-1877F2?style=for-the-badge&logo=facebook&logoColor=white" />
   </a>
-  <a href="https://wa.me/8801876118312">
+  <a href="https://wa.me/8801898747***">
     <img src="https://img.shields.io/badge/WhatsApp-25D366?style=for-the-badge&logo=whatsapp&logoColor=white" />
   </a>
-  <a href="https://github.com/goatbotnx/GOAT-BOT-V3">
+  <a href="https://github.com/Saan-Irl/SA-GOAT-BOT-V3">
     <img src="https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white" />
   </a>
 </p>
@@ -35,7 +35,7 @@
 ---
 
 ## 👨‍💻 Lead Developer
-**Xalman Hossain**  
+**Siam Ahmed Saan**  
 *Full Stack Developer | API Architect | Bot Systems Specialist*
 
 ---
@@ -66,7 +66,7 @@
 
 ### 1️⃣ Clone the Environment
 ```bash
-git clone https://github.com/goatbotnx/GOAT-BOT-V3.git
+git clone https://github.com/Saan-Irl/SA-GOAT-BOT-V3.git
 cd GOAT-BOT-V3
 ```
 
