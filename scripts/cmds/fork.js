@@ -14,9 +14,9 @@ module.exports = {
 
   langs: {
     en: {
-      current: `📌 𝗦𝗮𝗮𝗻 𝗘𝘅𝗵𝗮𝘂𝘀𝘁𝗲𝗱-𝐆𝐎𝐀𝐓-𝐁𝐎𝐓-𝐕𝟑
+      current: `📌 𝗦𝗮𝗮𝗻-𝐆𝐎𝐀𝐓-𝐁𝐎𝐓-𝐕𝟑
 ━━━━━━━━━━━━━━━━━━━━━━━━
-👑 Repo Owner : Siam Ahmed Saan
+👑 Repo Owner : 𝗦𝗜𝗔𝗠 𝗔𝗛𝗠𝗘𝗗 𝗦𝗔𝗔𝗡
 🔗 Repo       : %1
 💎 Status     : always updating
 ━━━━━━━━━━━━━━━━━━━━━━━━`
@@ -24,13 +24,13 @@ module.exports = {
   },
 
   onStart: async function ({ message, getLang }) {
-    const link = "https://github.com/goatbotnx/NX-GOAT-BOT-V3";
+    const link = "https://github.com/Saan-Irl/SA-GOAT-BOT-V3.";
     return message.reply(getLang("current", link));
   },
 
   onChat: async function ({ message, getLang, event }) {
     if (event.body && event.body.toLowerCase() === "fork") {
-      const link = "https://github.com/goatbotnx/NX-GOAT-BOT-V3";
+      const link = "https://github.com/Saan-Irl/SA-GOAT-BOT-V3";
       return message.reply(getLang("current", link));
     }
   }
