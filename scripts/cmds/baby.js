@@ -6,13 +6,22 @@ const API_URL = "https://vireonix.ai/v1/chat/completions";
 // 🤖 ARIYAN AI
 // বাংলা + English + Banglish
 // Reply Chain + Conversation Memory
-// Author Protection + Double Reply Protection
+// Author Protection
+// No Double Reply
 // ==========================================
 
 const ORIGINAL_AUTHOR = "ARIYAN AHMED SABBIR";
 
 const chatHistory = new Map();
-const processingMessages = new Set();
+
+// onChat duplicate protection
+const chatProcessing = new Set();
+
+// onStart duplicate protection
+const commandProcessing = new Set();
+
+// onReply duplicate protection
+const replyProcessing = new Set();
 
 const MAX_HISTORY = 12;
 const HISTORY_TIMEOUT = 30 * 60 * 1000;
@@ -31,23 +40,22 @@ function authorProtection() {
 
 
 // ==========================================
-// 🛡️ DOUBLE REPLY PROTECTION
+// 🛡️ SAFE LOCK
 // ==========================================
-function isAlreadyProcessing(event) {
+function makeLock(set, event, timeout = 8000) {
   const messageID = event?.messageID;
 
   if (!messageID) return false;
 
-  if (processingMessages.has(messageID)) {
+  if (set.has(messageID)) {
     return true;
   }
 
-  processingMessages.add(messageID);
+  set.add(messageID);
 
-  // Safety cleanup
   setTimeout(() => {
-    processingMessages.delete(messageID);
-  }, 15000);
+    set.delete(messageID);
+  }, timeout);
 
   return false;
 }
@@ -59,11 +67,18 @@ function isAlreadyProcessing(event) {
 async function typing(api, threadID) {
   try {
     if (api.sendTypingIndicator) {
-      await api.sendTypingIndicator(threadID, true);
+
+      await api.sendTypingIndicator(
+        threadID,
+        true
+      );
 
       setTimeout(async () => {
         try {
-          await api.sendTypingIndicator(threadID, false);
+          await api.sendTypingIndicator(
+            threadID,
+            false
+          );
         } catch {}
       }, 1200);
     }
@@ -75,12 +90,20 @@ async function typing(api, threadID) {
 // 🧠 Conversation Memory
 // ==========================================
 function getHistory(key) {
+
   const data = chatHistory.get(key);
 
-  if (!data) return [];
+  if (!data) {
+    return [];
+  }
 
-  if (Date.now() - data.updatedAt > HISTORY_TIMEOUT) {
+  if (
+    Date.now() - data.updatedAt >
+    HISTORY_TIMEOUT
+  ) {
+
     chatHistory.delete(key);
+
     return [];
   }
 
@@ -89,42 +112,82 @@ function getHistory(key) {
 
 
 function saveHistory(key, messages) {
+
   chatHistory.set(key, {
-    messages: messages.slice(-MAX_HISTORY),
-    updatedAt: Date.now()
+
+    messages:
+      messages.slice(-MAX_HISTORY),
+
+    updatedAt:
+      Date.now()
   });
 }
 
 
 // ==========================================
-// 🔗 Proper Reply Chain
+// 🔗 REPLY CHAIN
 // ==========================================
-function setReply(info, event, historyKey) {
-  if (!info?.messageID) return;
+function setReply(
+  info,
+  event,
+  historyKey
+) {
 
-  global.GoatBot.onReply.set(info.messageID, {
-    commandName: "baby",
-    messageID: info.messageID,
-    author: event.senderID,
-    threadID: event.threadID,
-    type: "reply",
-    historyKey
-  });
+  if (!info?.messageID) {
+    return;
+  }
+
+  if (!global.GoatBot?.onReply) {
+    return;
+  }
+
+  global.GoatBot.onReply.set(
+    info.messageID,
+    {
+      commandName: "baby",
+
+      messageID:
+        info.messageID,
+
+      author:
+        event.senderID,
+
+      threadID:
+        event.threadID,
+
+      type: "reply",
+
+      historyKey
+    }
+  );
 }
 
 
 // ==========================================
-// 📩 Reply Helper
+// 📩 REPLY HELPER
 // ==========================================
-async function sendBotReply(message, text) {
+async function sendBotReply(
+  message,
+  text
+) {
+
   try {
+
     return await message.reply(text);
+
   } catch (error) {
-    console.error("❌ Reply Error:", error.message);
+
+    console.error(
+      "❌ Reply Error:",
+      error.message
+    );
 
     try {
+
       return await message.send(text);
+
     } catch {
+
       return null;
     }
   }
@@ -132,55 +195,121 @@ async function sendBotReply(message, text) {
 
 
 // ==========================================
-// 😂 Random Replies
-// Custom Reply পরিবর্তন করা যাবে
+// 😂 RANDOM / CUSTOM REPLIES
+// ==========================================
+// এগুলো ইচ্ছামতো edit করতে পারবে
+// এগুলো পরিবর্তন করলে Author Protection কাজ করবে না এমন নয়
 // ==========================================
 const randomReplies = [
+
   "𝐀𝐬𝐬𝐚𝐥𝐚𝐦𝐮 𝐰𝐚𝐥𝐚𝐢𝐤𝐮𝐦 ♥",
+
   "বলেন sir__😌",
+
   "𝐁𝐨𝐥𝐨 𝐣𝐚𝐧 𝐤𝐢 𝐤𝐨𝐫𝐭𝐞 𝐩𝐚𝐫𝐢 𝐭𝐨𝐦𝐫 𝐣𝐨𝐧𝐧𝐨 🐸",
+
   "𝐋𝐞𝐛𝐮 𝐤𝐡𝐚𝐰 𝐝𝐚𝐤𝐭𝐞 𝐝𝐚𝐤𝐭𝐞 𝐭𝐨 𝐡𝐚𝐩𝐚𝐲 𝐠𝐞𝐬𝐨 🫴🍋",
+
   "𝐋𝐞𝐦𝐨𝐧 𝐭𝐮𝐬 🍋",
+
   "মুড়ি খাও 🫥",
+
   "অন্যকে নই, নিজেকে ভালোবাসতে শিখো প্রিয় 😌",
+
   "একা বাঁচতে শিখো দেখবে পৃথিবী অনেক সুন্দর ✨",
+
   "──‎ 𝐇𝐮𝐌..? 👉👈",
+
   "আম গাছে আম নাই ঢিল কেন মারো, তোমার সাথে প্রেম নাই বেবি কেন ডাকো 😒🐸",
+
   "কি হলো, মিস টিস করচ্ছো নাকি 🤣",
+
   "𝐓𝐫𝐮𝐬𝐭 𝐦𝐞 𝐢𝐚𝐦 ARIYAN 𝐟𝐫𝐨𝐦 SA BB IR 🧃",
+
   "𝗛𝗲𝘆 𝘅𝗮𝗻 𝗶𝗮𝗺 ARIYAN AI ✨",
+
   "𝐓𝐨𝐫 𝐣𝐧𝐧𝐨 𝐛𝐬𝐢 𝐚𝐜𝐡𝐢, 𝐣𝐥𝐝𝐢 𝐛𝐨𝐥 𝐤𝐢 𝐝𝐫𝐤𝐚𝐫 ✨",
+
   "একাকিত্ব মানুষকে ধীরে ধীরে শেষ করে ফেলে 🥀",
+
   "চা খাবেন, ঢেলে দেবো..? 😙🤏",
-  "𝙜𝙤𝙥 𝙜𝙤𝙥 𝙜𝙤𝙥 🙊"
+
+  "𝙜𝙤𝙥 𝙜𝙤𝙥 𝙜𝙤𝙥 🙊",
+
+  // ========================================
+  // 😂 CUSTOM REPLIES
+  // ========================================
+
+  "তোর তো বিয়ে হয় নাই বেবি পাইলি কই-🤦🏻",
+
+  "পরকিয়া করছোছ নাকি শালা-🥲🤧",
+
+  "তোকে ছাড়া বড় মন খারাপ লাগে 💔",
+
+  "তোরে খুব মিস করছি জানিস? 🥺",
+
+  "ডিসটার্ব করিস না, জামাই আদর করতেছে-🌚",
+
+  "এত ডাকিস না এমন থাপ্পড় দিমু, পেন্টে মুইতা দিবি-😾👋🏻",
+
+  "বেবি ডাকিস না 🍼 খাওয়া-😒👍🏻",
+
+  "কি ডাকোস, কেন টাকা শেষ নাকি-🌚🤌🏻",
+
+  "পিনিক ধরেছে যখন বটকে না ডেকে লেবু খান তখন🍋🐸",
+
+  "আম্মু ডাক শালা 😾🦶🏻",
+
+  "বেবি না ডাইকা গার্লফ্রেন্ড খুজে দে-🙃🫶🏻",
+
+  "ডাকিস না, তারেক জিয়ার সাথে মিটিংয়ে আছি 😒🖐🏻",
+
+  "জান কোলে নাও 😾✌🏻"
 ];
 
 
 // ==========================================
-// 🎲 Random Reply
+// 🎲 RANDOM REPLY
 // ==========================================
 function getRandomReply() {
+
   return randomReplies[
-    Math.floor(Math.random() * randomReplies.length)
+    Math.floor(
+      Math.random() *
+      randomReplies.length
+    )
   ];
 }
 
 
 // ==========================================
-// 🧠 AI Request
+// 🧠 AI REQUEST
 // ==========================================
-async function askAI(text, history = []) {
+async function askAI(
+  text,
+  history = []
+) {
+
   try {
+
     const messages = [
+
       {
         role: "system",
+
         content:
           "You are ARIYAN AI, a friendly Messenger chatbot. " +
+
           "You understand Bangla, English and Banglish. " +
+
           "If the user writes Bangla, answer naturally in Bangla. " +
+
           "If the user writes English, answer naturally in English. " +
+
           "If the user mixes Bangla and English, reply naturally in the same style. " +
+
           "Remember previous conversation context when relevant. " +
+
           "Keep casual replies reasonably short."
       },
 
@@ -192,32 +321,49 @@ async function askAI(text, history = []) {
       }
     ];
 
+
     const response = await axios.post(
+
       API_URL,
+
       {
         model: "auto",
         messages
       },
+
       {
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type":
+            "application/json"
         },
+
         timeout: 30000
       }
     );
 
-    const answer =
-      response.data?.choices?.[0]?.message?.content;
 
-    if (!answer) return null;
+    const answer =
+      response.data
+        ?.choices?.[0]
+        ?.message?.content;
+
+
+    if (!answer) {
+      return null;
+    }
+
 
     return answer.trim();
 
   } catch (error) {
+
     console.error(
       "❌ ARIYAN AI ERROR:",
+
       error.response?.status,
-      error.response?.data || error.message
+
+      error.response?.data ||
+      error.message
     );
 
     return null;
@@ -231,11 +377,13 @@ async function askAI(text, history = []) {
 module.exports = {
 
   config: {
+
     name: "baby",
 
-    version: "15.0",
+    version: "17.0",
 
-    author: "ARIYAN AHMED SABBIR",
+    author:
+      "ARIYAN AHMED SABBIR",
 
     countDown: 2,
 
@@ -283,19 +431,29 @@ module.exports = {
     message
   }) {
 
-    // 🔒 Author Check
+    // 🔒 Author Protection
     if (!authorProtection()) {
       console.log(
-        "❌ ARIYAN AI BLOCKED: Author has been changed."
+        "❌ ARIYAN AI BLOCKED: Author changed."
       );
       return;
     }
 
-    // 🛡️ Double Reply Protection
-    if (isAlreadyProcessing(event)) return;
+
+    // 🛡️ Command duplicate protection
+    if (
+      makeLock(
+        commandProcessing,
+        event
+      )
+    ) {
+      return;
+    }
+
 
     const text =
       args.join(" ").trim();
+
 
     const historyKey =
       `${event.threadID}_${event.senderID}`;
@@ -311,6 +469,7 @@ module.exports = {
           message,
           getRandomReply()
         );
+
 
       setReply(
         info,
@@ -351,10 +510,11 @@ module.exports = {
 
 
     // ========================================
-    // 🧠 Memory Update
+    // 🧠 SAVE MEMORY
     // ========================================
     saveHistory(
       historyKey,
+
       [
         ...history,
 
@@ -381,7 +541,6 @@ module.exports = {
       );
 
 
-    // Chain continue
     setReply(
       info,
       event,
@@ -400,22 +559,33 @@ module.exports = {
     message
   }) {
 
-    // 🔒 Author Check
+    // 🔒 Author Protection
     if (!authorProtection()) {
       console.log(
-        "❌ ARIYAN AI BLOCKED: Author has been changed."
+        "❌ ARIYAN AI BLOCKED: Author changed."
       );
       return;
     }
 
-    // 🛡️ Double Reply Protection
-    if (isAlreadyProcessing(event)) return;
+
+    // 🛡️ Reply duplicate protection
+    if (
+      makeLock(
+        replyProcessing,
+        event
+      )
+    ) {
+      return;
+    }
+
 
     const text =
       event.body?.trim();
 
 
-    if (!text) return;
+    if (!text) {
+      return;
+    }
 
 
     const historyKey =
@@ -452,10 +622,11 @@ module.exports = {
 
 
     // ========================================
-    // 🧠 Memory Update
+    // 🧠 SAVE MEMORY
     // ========================================
     saveHistory(
       historyKey,
+
       [
         ...history,
 
@@ -473,7 +644,7 @@ module.exports = {
 
 
     // ========================================
-    // ⭐ USER-এর REPLY MESSAGE-এর REPLY
+    // ⭐ USER REPLY-এর REPLY
     // ========================================
     const info =
       await sendBotReply(
@@ -482,7 +653,7 @@ module.exports = {
       );
 
 
-    // Chain continue
+    // 🔗 Continue chain
     setReply(
       info,
       event,
@@ -500,23 +671,65 @@ module.exports = {
     message
   }) {
 
-    // 🔒 Author Check
+    // 🔒 Author Protection
     if (!authorProtection()) {
       console.log(
-        "❌ ARIYAN AI BLOCKED: Author has been changed."
+        "❌ ARIYAN AI BLOCKED: Author changed."
       );
       return;
     }
+
 
     const body =
       event.body?.trim();
 
 
-    if (!body) return;
+    if (!body) {
+      return;
+    }
 
 
-    // 🛡️ Double Reply Protection
-    if (isAlreadyProcessing(event)) return;
+    // ========================================
+    // 🚫 IMPORTANT
+    // যদি user সরাসরি ARIYAN AI-এর message-এ
+    // Reply করে, তাহলে onChat উত্তর দেবে না।
+    //
+    // onReply শুধু উত্তর দেবে।
+    // এতে DOUBLE REPLY হবে না।
+    // ========================================
+    if (
+      event.messageReply &&
+      event.messageReply.senderID
+    ) {
+
+      try {
+
+        const botID =
+          api.getCurrentUserID();
+
+        if (
+          String(
+            event.messageReply.senderID
+          ) === String(botID)
+        ) {
+          return;
+        }
+
+      } catch {}
+    }
+
+
+    // ========================================
+    // 🛡️ onChat duplicate protection
+    // ========================================
+    if (
+      makeLock(
+        chatProcessing,
+        event
+      )
+    ) {
+      return;
+    }
 
 
     const lower =
@@ -524,9 +737,10 @@ module.exports = {
 
 
     // ========================================
-    // 🎯 Trigger List
+    // 🎯 TRIGGERS
     // ========================================
     const triggers = [
+
       "baby",
       "bby",
       "bbe",
@@ -539,13 +753,15 @@ module.exports = {
       "bbz",
       "মারিয়া",
       "bot"
+
     ];
 
 
     // ========================================
-    // 🎯 Prefix List
+    // 🎯 PREFIXES
     // ========================================
     const prefixes = [
+
       "baby ",
       "bby ",
       "bbe ",
@@ -558,17 +774,20 @@ module.exports = {
       "bbz ",
       "মারিয়া ",
       "bot "
+
     ];
 
 
     // ========================================
     // শুধু trigger
-    // যেমন:
+    //
     // bot
     // baby
     // maria
     // ========================================
-    if (triggers.includes(lower)) {
+    if (
+      triggers.includes(lower)
+    ) {
 
       const historyKey =
         `${event.threadID}_${event.senderID}`;
@@ -587,13 +806,14 @@ module.exports = {
         historyKey
       );
 
+
       return;
     }
 
 
     // ========================================
     // Prefix Detect
-    // যেমন:
+    //
     // bot hello
     // baby কেমন আছো
     // maria hi
@@ -601,9 +821,13 @@ module.exports = {
     let userMessage = null;
 
 
-    for (const prefix of prefixes) {
+    for (
+      const prefix of prefixes
+    ) {
 
-      if (lower.startsWith(prefix)) {
+      if (
+        lower.startsWith(prefix)
+      ) {
 
         userMessage =
           body
@@ -615,11 +839,13 @@ module.exports = {
     }
 
 
-    if (!userMessage) return;
+    if (!userMessage) {
+      return;
+    }
 
 
     // ========================================
-    // Prefix-এর পরে কিছু না থাকলে
+    // শুধু trigger + space
     // ========================================
     if (!userMessage.length) {
 
@@ -639,6 +865,7 @@ module.exports = {
         event,
         historyKey
       );
+
 
       return;
     }
@@ -680,10 +907,11 @@ module.exports = {
 
 
     // ========================================
-    // 🧠 Memory
+    // 🧠 SAVE MEMORY
     // ========================================
     saveHistory(
       historyKey,
+
       [
         ...history,
 
@@ -710,7 +938,7 @@ module.exports = {
       );
 
 
-    // Chain continue
+    // 🔗 Continue chain
     setReply(
       info,
       event,
@@ -723,22 +951,22 @@ module.exports = {
 // ==========================================
 // 🔒 FINAL AUTHOR VERIFICATION
 // ==========================================
-// কেউ config.author পরিবর্তন করলে command
-// কোনো handler চালাবে না।
-// ==========================================
 if (!authorProtection()) {
 
-  module.exports.onStart = async function () {
-    return;
-  };
+  module.exports.onStart =
+    async function () {
+      return;
+    };
 
-  module.exports.onReply = async function () {
-    return;
-  };
+  module.exports.onReply =
+    async function () {
+      return;
+    };
 
-  module.exports.onChat = async function () {
-    return;
-  };
+  module.exports.onChat =
+    async function () {
+      return;
+    };
 
   console.log(
     "❌ ARIYAN AI: Author verification failed!"
