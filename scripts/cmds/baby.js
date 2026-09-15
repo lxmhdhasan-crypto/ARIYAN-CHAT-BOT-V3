@@ -31,7 +31,7 @@ const utils = {
 
 module.exports.config = {
     name: "bby",
-    aliases: ["baby", "bot"],
+    aliases: ["bbz", "bot"],
     version: "10.1",
     author: "dipto cdi | xalman & 𝗦𝗮𝗮𝗻 𝗘𝘅𝗵𝗮𝘂𝘀𝘁𝗲𝗱",
     countDown: 0,
