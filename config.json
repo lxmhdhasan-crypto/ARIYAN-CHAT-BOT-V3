@@ -25,19 +25,19 @@
     "ignoreCommand": []
   },
   "adminBot": [
-    "100075454605535"
+    "100028959431665"
   ],
   "developer": [
-    "100075454605535"
+    "100028959431665"
   ],
   "vipuser": [
-    "100075454605535"
+    "100028959431665"
   ],
   "premium": [
-    "100075454605535"
+    "100028959431665"
   ],
   "creator": [
-    "100075454605535"
+    "100028959431665"
   ],
   "reactBy": {
     "delete": [
@@ -65,8 +65,8 @@
     "whiteListIds": [],
     "notes": "if you enable this feature, only the ids in the whiteListIds section can use the bot"
   },
-  "nickNameBot": "𝗦𝗔𝗔𝗡 𝗘𝗫𝗛𝗔𝗨𝗦𝗧𝗘𝗗",
-  "prefix": "/",
+  "nickNameBot": "𓆩 রাজনন্দিনী 𓆪",
+  "prefix": "!",
   "database": {
     "type": "sqlite",
     "uriMongodb": "",
