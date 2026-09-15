@@ -1,183 +1,746 @@
-const axios = require('axios');
-const baseApiUrl = async () => {
-    return "https://noobs-api.top/dipto";
-};
+const axios = require("axios");
 
-const utils = {
-    monospace: (text) => {
-        const monospaceMap = {
-            'A': '𝗔', 'B': '𝗕', 'C': '𝗖', 'D': '𝗗', 'E': '𝗘', 'F': '𝗙', 'G': '𝗚', 'H': '𝗛', 'I': '𝗜', 'J': '𝗝',
-            'K': '𝗞', 'L': '𝗟', 'M': '𝗠', 'N': '𝗡', 'O': '𝗢', 'P': '𝗣', 'Q': '𝗤', 'R': '𝗥', 'S': '𝗦', 'T': '𝗧',
-            'U': '𝗨', 'V': '𝗩', 'W': '𝗪', 'X': '𝗫', 'Y': '𝗬', 'Z': '𝗭',
-            'a': '𝗮', 'b': '𝗯', 'c': '𝗰', 'd': '𝗱', 'e': '𝗲', 'f': '𝗳', 'g': '𝗴', 'h': '𝗵', 'i': '𝗶', 'j': '𝗷',
-            'k': '𝗸', 'l': '𝗹', 'm': '𝗺', 'n': '𝗻', 'o': '𝗼', 'p': '𝗽', 'q': '𝗾', 'r': '𝗿', 's': '𝘀', 't': '𝘁',
-            'u': '𝘂', 'v': '𝘃', 'w': '𝘄', 'x': '𝘅', 'y': '𝘆', 'z': '𝘇',
-            '0': '𝟶', '1': '𝟭', '2': '𝟮', '3': '𝟯', '4': '𝟰', '5': '𝟱', '6': '𝟲', '7': '𝟳', '8': '𝟴', '9': '𝟵'
-        };
-        return text.split('').map(char => monospaceMap[char] || char).join('');
-    },
-    realMention: (name, uid, message) => { 
-        const finalMessage = `『 ${name} 』\n\n${message}`; 
-        return { body: finalMessage, mentions: [{ tag: name, id: uid }] }; 
-    }, 
-    normalMention: (name, uid, message) => { 
-        return { body: message, mentions: [{ tag: name, id: uid }] }; 
-    }, 
-    getRandomGreeting: () => { 
-        const greetings = [""]; 
-        return greetings[Math.floor(Math.random() * greetings.length)]; 
+const API_URL = "https://vireonix.ai/v1/chat/completions";
+
+// ==========================================
+// 🤖 ARIYAN AI
+// বাংলা + English + Banglish
+// Reply Chain + Conversation Memory
+// Author Protection + Double Reply Protection
+// ==========================================
+
+const ORIGINAL_AUTHOR = "ARIYAN AHMED SABBIR";
+
+const chatHistory = new Map();
+const processingMessages = new Set();
+
+const MAX_HISTORY = 12;
+const HISTORY_TIMEOUT = 30 * 60 * 1000;
+
+
+// ==========================================
+// 🔒 AUTHOR PROTECTION
+// ==========================================
+function authorProtection() {
+  try {
+    return module.exports?.config?.author === ORIGINAL_AUTHOR;
+  } catch {
+    return false;
+  }
+}
+
+
+// ==========================================
+// 🛡️ DOUBLE REPLY PROTECTION
+// ==========================================
+function isAlreadyProcessing(event) {
+  const messageID = event?.messageID;
+
+  if (!messageID) return false;
+
+  if (processingMessages.has(messageID)) {
+    return true;
+  }
+
+  processingMessages.add(messageID);
+
+  // Safety cleanup
+  setTimeout(() => {
+    processingMessages.delete(messageID);
+  }, 15000);
+
+  return false;
+}
+
+
+// ==========================================
+// ⌨️ Typing Indicator
+// ==========================================
+async function typing(api, threadID) {
+  try {
+    if (api.sendTypingIndicator) {
+      await api.sendTypingIndicator(threadID, true);
+
+      setTimeout(async () => {
+        try {
+          await api.sendTypingIndicator(threadID, false);
+        } catch {}
+      }, 1200);
     }
-};
+  } catch {}
+}
 
-module.exports.config = {
-    name: "bby",
-    aliases: ["bbz", "bot"],
-    version: "10.1",
-    author: "dipto cdi | xalman & 𝗦𝗮𝗮𝗻 𝗘𝘅𝗵𝗮𝘂𝘀𝘁𝗲𝗱",
-    countDown: 0,
+
+// ==========================================
+// 🧠 Conversation Memory
+// ==========================================
+function getHistory(key) {
+  const data = chatHistory.get(key);
+
+  if (!data) return [];
+
+  if (Date.now() - data.updatedAt > HISTORY_TIMEOUT) {
+    chatHistory.delete(key);
+    return [];
+  }
+
+  return data.messages || [];
+}
+
+
+function saveHistory(key, messages) {
+  chatHistory.set(key, {
+    messages: messages.slice(-MAX_HISTORY),
+    updatedAt: Date.now()
+  });
+}
+
+
+// ==========================================
+// 🔗 Proper Reply Chain
+// ==========================================
+function setReply(info, event, historyKey) {
+  if (!info?.messageID) return;
+
+  global.GoatBot.onReply.set(info.messageID, {
+    commandName: "baby",
+    messageID: info.messageID,
+    author: event.senderID,
+    threadID: event.threadID,
+    type: "reply",
+    historyKey
+  });
+}
+
+
+// ==========================================
+// 📩 Reply Helper
+// ==========================================
+async function sendBotReply(message, text) {
+  try {
+    return await message.reply(text);
+  } catch (error) {
+    console.error("❌ Reply Error:", error.message);
+
+    try {
+      return await message.send(text);
+    } catch {
+      return null;
+    }
+  }
+}
+
+
+// ==========================================
+// 😂 Random Replies
+// Custom Reply পরিবর্তন করা যাবে
+// ==========================================
+const randomReplies = [
+  "𝐀𝐬𝐬𝐚𝐥𝐚𝐦𝐮 𝐰𝐚𝐥𝐚𝐢𝐤𝐮𝐦 ♥",
+  "বলেন sir__😌",
+  "𝐁𝐨𝐥𝐨 𝐣𝐚𝐧 𝐤𝐢 𝐤𝐨𝐫𝐭𝐞 𝐩𝐚𝐫𝐢 𝐭𝐨𝐦𝐫 𝐣𝐨𝐧𝐧𝐨 🐸",
+  "𝐋𝐞𝐛𝐮 𝐤𝐡𝐚𝐰 𝐝𝐚𝐤𝐭𝐞 𝐝𝐚𝐤𝐭𝐞 𝐭𝐨 𝐡𝐚𝐩𝐚𝐲 𝐠𝐞𝐬𝐨 🫴🍋",
+  "𝐋𝐞𝐦𝐨𝐧 𝐭𝐮𝐬 🍋",
+  "মুড়ি খাও 🫥",
+  "অন্যকে নই, নিজেকে ভালোবাসতে শিখো প্রিয় 😌",
+  "একা বাঁচতে শিখো দেখবে পৃথিবী অনেক সুন্দর ✨",
+  "──‎ 𝐇𝐮𝐌..? 👉👈",
+  "আম গাছে আম নাই ঢিল কেন মারো, তোমার সাথে প্রেম নাই বেবি কেন ডাকো 😒🐸",
+  "কি হলো, মিস টিস করচ্ছো নাকি 🤣",
+  "𝐓𝐫𝐮𝐬𝐭 𝐦𝐞 𝐢𝐚𝐦 ARIYAN 𝐟𝐫𝐨𝐦 SA BB IR 🧃",
+  "𝗛𝗲𝘆 𝘅𝗮𝗻 𝗶𝗮𝗺 ARIYAN AI ✨",
+  "𝐓𝐨𝐫 𝐣𝐧𝐧𝐨 𝐛𝐬𝐢 𝐚𝐜𝐡𝐢, 𝐣𝐥𝐝𝐢 𝐛𝐨𝐥 𝐤𝐢 𝐝𝐫𝐤𝐚𝐫 ✨",
+  "একাকিত্ব মানুষকে ধীরে ধীরে শেষ করে ফেলে 🥀",
+  "চা খাবেন, ঢেলে দেবো..? 😙🤏",
+  "𝙜𝙤𝙥 𝙜𝙤𝙥 𝙜𝙤𝙥 🙊"
+];
+
+
+// ==========================================
+// 🎲 Random Reply
+// ==========================================
+function getRandomReply() {
+  return randomReplies[
+    Math.floor(Math.random() * randomReplies.length)
+  ];
+}
+
+
+// ==========================================
+// 🧠 AI Request
+// ==========================================
+async function askAI(text, history = []) {
+  try {
+    const messages = [
+      {
+        role: "system",
+        content:
+          "You are ARIYAN AI, a friendly Messenger chatbot. " +
+          "You understand Bangla, English and Banglish. " +
+          "If the user writes Bangla, answer naturally in Bangla. " +
+          "If the user writes English, answer naturally in English. " +
+          "If the user mixes Bangla and English, reply naturally in the same style. " +
+          "Remember previous conversation context when relevant. " +
+          "Keep casual replies reasonably short."
+      },
+
+      ...history,
+
+      {
+        role: "user",
+        content: text
+      }
+    ];
+
+    const response = await axios.post(
+      API_URL,
+      {
+        model: "auto",
+        messages
+      },
+      {
+        headers: {
+          "Content-Type": "application/json"
+        },
+        timeout: 30000
+      }
+    );
+
+    const answer =
+      response.data?.choices?.[0]?.message?.content;
+
+    if (!answer) return null;
+
+    return answer.trim();
+
+  } catch (error) {
+    console.error(
+      "❌ ARIYAN AI ERROR:",
+      error.response?.status,
+      error.response?.data || error.message
+    );
+
+    return null;
+  }
+}
+
+
+// ==========================================
+// 📦 COMMAND
+// ==========================================
+module.exports = {
+
+  config: {
+    name: "baby",
+
+    version: "15.0",
+
+    author: "ARIYAN AHMED SABBIR",
+
+    countDown: 2,
+
     role: 0,
-    description: "better than all sim simi api by dipto",
-    category: "CHATTING",
+
+    shortDescription: {
+      en: "Chat with ARIYAN AI"
+    },
+
+    longDescription: {
+      en:
+        "Bangla + English AI with reply chain and conversation memory"
+    },
+
+    category: "AI",
+
     guide: {
-        en: "{pn} [anyMessage] OR\nteach [YourMessage] - [Reply1], [Reply2], [Reply3]... OR\nteach [react] [YourMessage] - [react1], [react2], [react3]... OR\nremove [YourMessage] OR\nrm [YourMessage] - [indexNumber] OR\nmsg [YourMessage] OR\nlist OR \nall OR\nedit [YourMessage] - [NewMessage]"
+      en:
+        "{pn} hello\n" +
+        "{pn} কেমন আছো\n" +
+        "{pn} how are you"
+    },
+
+    aliases: [
+      "bby",
+      "bbe",
+      "babe",
+      "sam",
+      "mari",
+      "maria",
+      "hippi",
+      "xan",
+      "bbz"
+    ]
+  },
+
+
+  // ==========================================
+  // ▶️ ON START
+  // ==========================================
+  onStart: async function ({
+    api,
+    event,
+    args,
+    message
+  }) {
+
+    // 🔒 Author Check
+    if (!authorProtection()) {
+      console.log(
+        "❌ ARIYAN AI BLOCKED: Author has been changed."
+      );
+      return;
     }
+
+    // 🛡️ Double Reply Protection
+    if (isAlreadyProcessing(event)) return;
+
+    const text =
+      args.join(" ").trim();
+
+    const historyKey =
+      `${event.threadID}_${event.senderID}`;
+
+
+    // ========================================
+    // শুধু baby লিখলে
+    // ========================================
+    if (!text) {
+
+      const info =
+        await sendBotReply(
+          message,
+          getRandomReply()
+        );
+
+      setReply(
+        info,
+        event,
+        historyKey
+      );
+
+      return;
+    }
+
+
+    await typing(
+      api,
+      event.threadID
+    );
+
+
+    const history =
+      getHistory(historyKey);
+
+
+    const answer =
+      await askAI(
+        text,
+        history
+      );
+
+
+    if (!answer) {
+
+      await sendBotReply(
+        message,
+        "⚠️ ARIYAN AI এখন উত্তর দিতে পারছে না। একটু পরে আবার চেষ্টা করো।"
+      );
+
+      return;
+    }
+
+
+    // ========================================
+    // 🧠 Memory Update
+    // ========================================
+    saveHistory(
+      historyKey,
+      [
+        ...history,
+
+        {
+          role: "user",
+          content: text
+        },
+
+        {
+          role: "assistant",
+          content: answer
+        }
+      ]
+    );
+
+
+    // ========================================
+    // ⭐ USER MESSAGE-এর REPLY
+    // ========================================
+    const info =
+      await sendBotReply(
+        message,
+        `🤖 ARIYAN AI\n\n${answer}`
+      );
+
+
+    // Chain continue
+    setReply(
+      info,
+      event,
+      historyKey
+    );
+  },
+
+
+  // ==========================================
+  // 💬 ON REPLY
+  // ==========================================
+  onReply: async function ({
+    api,
+    event,
+    Reply,
+    message
+  }) {
+
+    // 🔒 Author Check
+    if (!authorProtection()) {
+      console.log(
+        "❌ ARIYAN AI BLOCKED: Author has been changed."
+      );
+      return;
+    }
+
+    // 🛡️ Double Reply Protection
+    if (isAlreadyProcessing(event)) return;
+
+    const text =
+      event.body?.trim();
+
+
+    if (!text) return;
+
+
+    const historyKey =
+      Reply?.historyKey ||
+      `${event.threadID}_${event.senderID}`;
+
+
+    await typing(
+      api,
+      event.threadID
+    );
+
+
+    const history =
+      getHistory(historyKey);
+
+
+    const answer =
+      await askAI(
+        text,
+        history
+      );
+
+
+    if (!answer) {
+
+      await sendBotReply(
+        message,
+        "⚠️ উত্তর দিতে একটু সমস্যা হচ্ছে 😵‍💫"
+      );
+
+      return;
+    }
+
+
+    // ========================================
+    // 🧠 Memory Update
+    // ========================================
+    saveHistory(
+      historyKey,
+      [
+        ...history,
+
+        {
+          role: "user",
+          content: text
+        },
+
+        {
+          role: "assistant",
+          content: answer
+        }
+      ]
+    );
+
+
+    // ========================================
+    // ⭐ USER-এর REPLY MESSAGE-এর REPLY
+    // ========================================
+    const info =
+      await sendBotReply(
+        message,
+        `🤖 ARIYAN AI\n\n${answer}`
+      );
+
+
+    // Chain continue
+    setReply(
+      info,
+      event,
+      historyKey
+    );
+  },
+
+
+  // ==========================================
+  // 👀 ON CHAT
+  // ==========================================
+  onChat: async function ({
+    api,
+    event,
+    message
+  }) {
+
+    // 🔒 Author Check
+    if (!authorProtection()) {
+      console.log(
+        "❌ ARIYAN AI BLOCKED: Author has been changed."
+      );
+      return;
+    }
+
+    const body =
+      event.body?.trim();
+
+
+    if (!body) return;
+
+
+    // 🛡️ Double Reply Protection
+    if (isAlreadyProcessing(event)) return;
+
+
+    const lower =
+      body.toLowerCase();
+
+
+    // ========================================
+    // 🎯 Trigger List
+    // ========================================
+    const triggers = [
+      "baby",
+      "bby",
+      "bbe",
+      "babe",
+      "sam",
+      "mari",
+      "maria",
+      "hippi",
+      "xan",
+      "bbz",
+      "মারিয়া",
+      "bot"
+    ];
+
+
+    // ========================================
+    // 🎯 Prefix List
+    // ========================================
+    const prefixes = [
+      "baby ",
+      "bby ",
+      "bbe ",
+      "babe ",
+      "sam ",
+      "mari ",
+      "maria ",
+      "hippi ",
+      "xan ",
+      "bbz ",
+      "মারিয়া ",
+      "bot "
+    ];
+
+
+    // ========================================
+    // শুধু trigger
+    // যেমন:
+    // bot
+    // baby
+    // maria
+    // ========================================
+    if (triggers.includes(lower)) {
+
+      const historyKey =
+        `${event.threadID}_${event.senderID}`;
+
+
+      const info =
+        await sendBotReply(
+          message,
+          getRandomReply()
+        );
+
+
+      setReply(
+        info,
+        event,
+        historyKey
+      );
+
+      return;
+    }
+
+
+    // ========================================
+    // Prefix Detect
+    // যেমন:
+    // bot hello
+    // baby কেমন আছো
+    // maria hi
+    // ========================================
+    let userMessage = null;
+
+
+    for (const prefix of prefixes) {
+
+      if (lower.startsWith(prefix)) {
+
+        userMessage =
+          body
+            .slice(prefix.length)
+            .trim();
+
+        break;
+      }
+    }
+
+
+    if (!userMessage) return;
+
+
+    // ========================================
+    // Prefix-এর পরে কিছু না থাকলে
+    // ========================================
+    if (!userMessage.length) {
+
+      const historyKey =
+        `${event.threadID}_${event.senderID}`;
+
+
+      const info =
+        await sendBotReply(
+          message,
+          getRandomReply()
+        );
+
+
+      setReply(
+        info,
+        event,
+        historyKey
+      );
+
+      return;
+    }
+
+
+    // ========================================
+    // 🧠 AI
+    // ========================================
+    const historyKey =
+      `${event.threadID}_${event.senderID}`;
+
+
+    await typing(
+      api,
+      event.threadID
+    );
+
+
+    const history =
+      getHistory(historyKey);
+
+
+    const answer =
+      await askAI(
+        userMessage,
+        history
+      );
+
+
+    if (!answer) {
+
+      await sendBotReply(
+        message,
+        "⚠️ ARIYAN AI এখন একটু ব্যস্ত 😵‍💫"
+      );
+
+      return;
+    }
+
+
+    // ========================================
+    // 🧠 Memory
+    // ========================================
+    saveHistory(
+      historyKey,
+      [
+        ...history,
+
+        {
+          role: "user",
+          content: userMessage
+        },
+
+        {
+          role: "assistant",
+          content: answer
+        }
+      ]
+    );
+
+
+    // ========================================
+    // ⭐ ORIGINAL USER MESSAGE-এর REPLY
+    // ========================================
+    const info =
+      await sendBotReply(
+        message,
+        `🤖 ARIYAN AI\n\n${answer}`
+      );
+
+
+    // Chain continue
+    setReply(
+      info,
+      event,
+      historyKey
+    );
+  }
 };
 
-module.exports.onStart = async ({ api, event, args, usersData }) => {
-    const link = `${await baseApiUrl()}/baby`;
-    const xalman = args.join(" ").toLowerCase();
-    const uid = event.senderID;
-    const senderName = (await usersData.getName(uid)) || "User";
 
-    try {
-        if (!args[0]) {
-            const ran = ["Bolo baby ❤️", "Type baby help", "উফ বেবি আদর করে দাও 🥵", "না ডাইকা চুম্মা দে"];
-            return api.sendMessage(ran[Math.floor(Math.random() * ran.length)], event.threadID, event.messageID);
-        }
-        if (args[0] === 'remove') {
-            const fina = xalman.replace("remove ", "");
-            const dat = (await axios.get(`${link}?remove=${encodeURIComponent(fina)}&senderID=${uid}`)).data.message;
-            return api.sendMessage(dat, event.threadID, event.messageID);
-        }
-        if (args[0] === 'rm' && xalman.includes('-')) {
-            const [fi, f] = xalman.replace("rm ", "").split(/\s*-\s*/);
-            const da = (await axios.get(`${link}?remove=${encodeURIComponent(fi)}&index=${f}`)).data.message;
-            return api.sendMessage(da, event.threadID, event.messageID);
-        }
-        if (args[0] === 'list') {
-            if (args[1] === 'all') {
-                const data = (await axios.get(`${link}?list=all`)).data;
-                const limit = parseInt(args[2]) || 100;
-                const limited = data?.teacher?.teacherList?.slice(0, limit);
-                const teachers = await Promise.all(limited.map(async (item) => {
-                    const number = Object.keys(item)[0];
-                    const value = item[number];
-                    const name = await usersData.getName(number).catch(() => number) || "Not found";
-                    return { name, value };
-                }));
-                teachers.sort((a, b) => b.value - a.value);
-                const output = teachers.map((t, i) => `${i + 1}/ ${t.name}: ${t.value}`).join('\n');
-                return api.sendMessage(`Total Teach = ${data.length}\n👑 | List of Teachers of baby\n${output}`, event.threadID, event.messageID);
-            } else {
-                const d = (await axios.get(`${link}?list=all`)).data;
-                return api.sendMessage(`❇️ | Total Teach = ${d.length || "api off"}\n♻️ | Total Response = ${d.responseLength || "api off"}`, event.threadID, event.messageID);
-            }
-        }
-        if (args[0] === 'msg') {
-            const fuk = xalman.replace("msg ", "");
-            const d = (await axios.get(`${link}?list=${encodeURIComponent(fuk)}`)).data.data;
-            return api.sendMessage(`Message ${fuk} = ${d}`, event.threadID, event.messageID);
-        }
-        if (args[0] === 'edit') {
-            const parts = xalman.split(/\s*-\s*/);
-            if (parts.length < 2) return api.sendMessage('❌ | Invalid format! Use edit [YourMessage] - [NewReply]', event.threadID, event.messageID);
-            const dA = (await axios.get(`${link}?edit=${encodeURIComponent(args[1])}&replace=${encodeURIComponent(parts[1])}&senderID=${uid}`)).data.message;
-            return api.sendMessage(`changed ${dA}`, event.threadID, event.messageID);
-        }
-        if (args[0] === 'teach' && args[1] === 'react') {
-            const parts = xalman.replace("teach react ", "").split(/\s*-\s*/);
-            if (parts.length < 2) return api.sendMessage('❌ | Invalid format! Use: teach react message - ❤️, 😀', event.threadID, event.messageID);
-            const msg = parts[0].trim();
-            const reacts = parts[1].trim();
-            const res = await axios.get(`${link}?teach=${encodeURIComponent(msg)}&react=${encodeURIComponent(reacts)}`);
-            return api.sendMessage(`✅ Reacts added: ${res.data.message}`, event.threadID, event.messageID);
-        }
-        if (args[0] === 'teach' && args[1] === 'amar') {
-            const parts = xalman.split(/\s*-\s*/);
-            if (parts.length < 2) return api.sendMessage('❌ | Invalid format! Use: teach amar message - reply', event.threadID, event.messageID);
-            const msg = parts[0].replace("teach amar ", "").trim();
-            const reply = parts[1].trim();
-            const res = await axios.get(`${link}?teach=${encodeURIComponent(msg)}&senderID=${uid}&reply=${encodeURIComponent(reply)}&key=intro`);
-            return api.sendMessage(`✅ Intro reply added: ${res.data.message}`, event.threadID, event.messageID);
-        }
-        if (args[0] === 'teach' && args[1] !== 'amar' && args[1] !== 'react') {
-            const parts = xalman.split(/\s*-\s*/);
-            if (parts.length < 2) return api.sendMessage('❌ | Invalid format! Use: teach message - reply1, reply2', event.threadID, event.messageID);
-            const msg = parts[0].replace("teach ", "").trim();
-            const replies = parts[1].trim();
-            const res = await axios.get(`${link}?teach=${encodeURIComponent(msg)}&reply=${encodeURIComponent(replies)}&senderID=${uid}&threadID=${event.threadID}`);
-            const teacherName = (await usersData.get(res.data.teacher)).name || "Unknown";
-            const outputMessage = utils.monospace(`✅ Replies added: ${res.data.message}\n👤 Teacher: ${teacherName}\n📚 Total Teachs: ${res.data.teachs}`);
-            return api.sendMessage(outputMessage, event.threadID, event.messageID);
-        }
+// ==========================================
+// 🔒 FINAL AUTHOR VERIFICATION
+// ==========================================
+// কেউ config.author পরিবর্তন করলে command
+// কোনো handler চালাবে না।
+// ==========================================
+if (!authorProtection()) {
 
-        const resData = (await axios.get(`${link}?text=${encodeURIComponent(xalman)}&senderID=${uid}`)).data.reply;
-        const replyText = utils.monospace(resData);
-        api.sendMessage(replyText, event.threadID, (error, info) => {
-            global.GoatBot.onReply.set(info.messageID, { commandName: this.config.name, type: "reply", messageID: info.messageID, author: event.senderID, apiUrl: link });
-        }, event.messageID);
+  module.exports.onStart = async function () {
+    return;
+  };
 
-    } catch (e) {
-        console.log(e);
-        api.sendMessage("Check console for error", event.threadID, event.messageID);
-    }
-};
+  module.exports.onReply = async function () {
+    return;
+  };
 
-module.exports.onReply = async ({ api, event, Reply }) => {
-    try {
-        if (event.type == "message_reply") {
-            const a = (await axios.get(`${await baseApiUrl()}/baby?text=${encodeURIComponent(event.body?.toLowerCase())}&senderID=${event.senderID}`)).data.reply;
-            const replyText = utils.monospace(a);
-            await api.sendMessage(replyText, event.threadID, (error, info) => {
-                global.GoatBot.onReply.set(info.messageID, { commandName: this.config.name, type: "reply", messageID: info.messageID, author: event.senderID });
-            }, event.messageID);
-        }
-    } catch (err) {
-        return api.sendMessage(`Error: ${err.message}`, event.threadID, event.messageID);
-    }
-};
+  module.exports.onChat = async function () {
+    return;
+  };
 
-module.exports.onChat = async ({ api, event, usersData }) => {
-    try {
-        const body = event.body ? event.body.toLowerCase() : "";
-        if (body.startsWith("baby") || body.startsWith("sara") || body.startsWith("mikasa") || body.startsWith("hinata") || body.startsWith("xadika") || body.startsWith("bby") || body.startsWith("bot") || body.startsWith("jan") || body.startsWith("babu") || body.startsWith("alya")) {
-            const arr = body.replace(/^\S+\s*/, "");
-            const uid = event.senderID;
-            const senderName = (await usersData.getName(uid)) || "User";
-            const baseReplies = [
-                "তোর তো বিয়ে হয় নাই বেবি পাইলি কই-🤦🏻", "পরকিয়া করছোছ নাকি শালা-🥲🤧", "তোকে ছাড়া বড় মন খারাপ লাগে 💔", "তোরে খুব মিস করছি জানিস? 🥺",
-                "ডিসটার্ব করিস না জামাই আদর করতেছে-🌚💋", "এত ডাকিস না এমন থাপ্পর দিমু পেন্টে মুইতা দিবি-😾👋🏻", "বেবি ডাকিস না 🍼 খাওয়া-😒👍🏻", 
-                "কি ডাকোস কেন টাকা শেষ নাকি-🌚🤌🏻", "পিনিক ধরেছে যখন বটকে না ডেকে লেবু খান তখন🍋🐸", "ভিডিও কল দিব নাকি সোনা 🌚🫦", "আম্মু ডাক শালা 😾🦶🏻", 
-                "বেবি না ডাইকা গার্লফ্রেন্ড খুজে দে-🙃🫶🏻", "ডাকিস না তারেক জিয়ার সাথে মিটিংয়ে আছি 😒🖐🏻", "বস ডাক বস😾✌🏻", "বেবি ডাকিস না পরে কোলে উঠে অন্য কিছু খেতে মন চাইবে🌚💋"
-            ];
-
-            if (!arr) {
-                const randomReply = baseReplies[Math.floor(Math.random() * baseReplies.length)];
-                const mentionObj = utils.realMention(senderName, uid, randomReply);
-                await api.sendMessage(mentionObj, event.threadID, (error, info) => {
-                    if (info) {
-                        global.GoatBot.onReply.set(info.messageID, { commandName: this.config.name, type: "reply", messageID: info.messageID, author: event.senderID });
-                    }
-                }, event.messageID);
-                return;
-            }
-            const a = (await axios.get(`${await baseApiUrl()}/baby?text=${encodeURIComponent(arr)}&senderID=${event.senderID}`)).data.reply;
-            const replyText = utils.monospace(a);
-            await api.sendMessage(replyText, event.threadID, (error, info) => {
-                global.GoatBot.onReply.set(info.messageID, { commandName: this.config.name, type: "reply", messageID: info.messageID, author: event.senderID });
-            }, event.messageID);
-        }
-    } catch (err) {
-        console.error("onChat Error:", err);
-    }
-};
+  console.log(
+    "❌ ARIYAN AI: Author verification failed!"
+  );
+}
