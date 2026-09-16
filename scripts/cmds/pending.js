@@ -1,14 +1,54 @@
 const moment = require("moment-timezone");
 
-const BOT_NAME = "𝗔𝗥𝗜𝗬𝗔𝗡 𝗖𝗛𝗔𝗧 𝗕𝗢𝗧";
+// ═════════════════════════════════════
+// 🔐 PROTECTED AUTHOR
+// ═════════════════════════════════════
+
+const PROTECTED_AUTHOR = "ARIYAN AHMED SABBIR";
+
+
+// ═════════════════════════════════════
+// ✏️ EDITABLE INFORMATION
+// ═════════════════════════════════════
+
+// 👑 Owner Name — এটা পরিবর্তন করা যাবে
 const OWNER_NAME = "𝗔𝗥𝗜𝗬𝗔𝗡 𝗦𝗔𝗕𝗕𝗜𝗥";
+
+// 🤖 Bot Name — এটা পরিবর্তন করা যাবে
+const BOT_NAME = "𝗔𝗥𝗜𝗬𝗔𝗡 𝗖𝗛𝗔𝗧 𝗕𝗢𝗧";
+
+// 🏷️ Bot Nickname — এটা পরিবর্তন করা যাবে
 const BOT_NICKNAME = "👑༺𓆩 রানীসাহেবা 𓆪༻👑";
 
+
+// ═════════════════════════════════════
+// 🔐 AUTHOR SECURITY CHECK
+// ═════════════════════════════════════
+
+function securityCheck() {
+  try {
+    return (
+      module.exports?.config?.author === PROTECTED_AUTHOR
+    );
+  } catch {
+    return false;
+  }
+}
+
+
+// ═════════════════════════════════════
+// 📦 MODULE
+// ═════════════════════════════════════
+
 module.exports = {
+
   config: {
     name: "pending",
-    version: "3.1",
-    author: "ARIYAN AHMED SABBIR",
+    version: "3.3",
+
+    // 🔐 Author Protected
+    author: PROTECTED_AUTHOR,
+
     countDown: 5,
     role: 2,
 
@@ -38,10 +78,18 @@ module.exports = {
     }
   },
 
+
+  // ═════════════════════════════════════
+  // 💬 LANGUAGE / MESSAGES
+  // ═════════════════════════════════════
+
   langs: {
+
     en: {
+
       invalid:
         "❌ Invalid selection: %1",
+
 
       fetchFail:
         "╭━━━━━━━━━━━━━━━━━━╮\n" +
@@ -50,6 +98,7 @@ module.exports = {
         "Unable to load pending groups.\n" +
         "Please try again later.",
 
+
       empty:
         "╭━━━━━━━━━━━━━━━━━━╮\n" +
         "       📭 𝗣𝗘𝗡𝗗𝗜𝗡𝗚\n" +
@@ -57,6 +106,7 @@ module.exports = {
         "✅ No pending groups found.\n\n" +
         `🤖 ${BOT_NAME}\n` +
         `👑 ${OWNER_NAME}`,
+
 
       list:
         "╭━━━━━━━━━━━━━━━━━━━━╮\n" +
@@ -72,6 +122,7 @@ module.exports = {
         "🔴 Reply `c <number>` → 𝗥𝗘𝗙𝗨𝗦𝗘\n\n" +
         "💠 Select carefully!",
 
+
       approved:
         "╭━━━━━━━━━━━━━━━━━━━━╮\n" +
         "      🎉 𝗔𝗣𝗣𝗥𝗢𝗩𝗘𝗗\n" +
@@ -85,6 +136,7 @@ module.exports = {
         "🚀 Bot access has been granted.\n" +
         "💠 Welcome to ARIYAN CHAT BOT!\n" +
         "━━━━━━━━━━━━━━━━━━━━",
+
 
       refused:
         "╭━━━━━━━━━━━━━━━━━━━━╮\n" +
@@ -101,87 +153,132 @@ module.exports = {
     }
   },
 
-  // ==========================================
-  // REPLY HANDLER
-  // ==========================================
 
-  onReply: async function ({ api, event, Reply, getLang }) {
+  // ═════════════════════════════════════
+  // 🔁 ON REPLY
+  // ═════════════════════════════════════
+
+  onReply: async function ({
+    api,
+    event,
+    Reply,
+    getLang
+  }) {
+
+    // 🔐 Author protection
+    if (!securityCheck()) {
+      console.log(
+        "❌ [pending] SECURITY BLOCK: Author was changed."
+      );
+      return;
+    }
+
+
     if (event.senderID != Reply.author)
       return;
 
-    const input = String(event.body || "").trim();
+
+    const input =
+      String(event.body || "").trim();
 
     if (!input)
       return;
+
 
     const {
       threadID,
       messageID
     } = event;
 
+
     const prefix =
       global.GoatBot?.config?.prefix || "/";
 
-    const queue = Reply.queue || [];
+
+    const queue =
+      Reply.queue || [];
+
 
     if (!queue.length) {
+
       return api.sendMessage(
         "❌ This pending list has expired.\nPlease run the pending command again.",
         threadID,
         messageID
       );
+
     }
 
-    const dateTime = moment()
-      .tz("Asia/Dhaka")
-      .format("ddd, YYYY-MMM-DD, HH:mm:ss");
+
+    const dateTime =
+      moment()
+        .tz("Asia/Dhaka")
+        .format("ddd, YYYY-MMM-DD, HH:mm:ss");
+
 
     let done = 0;
 
-    // ==========================================
-    // REFUSE / CANCEL
-    // ==========================================
+
+    // ═════════════════════════════════════
+    // 🚫 REFUSE / CANCEL
+    // ═════════════════════════════════════
 
     if (/^(c|cancel)\b/i.test(input)) {
-      const numberPart = input
-        .replace(/^(c|cancel)\b/i, "")
-        .trim();
 
-      const nums = numberPart
-        .split(/\s+/)
-        .filter(Boolean);
+      const numberPart =
+        input
+          .replace(/^(c|cancel)\b/i, "")
+          .trim();
+
+
+      const nums =
+        numberPart
+          .split(/\s+/)
+          .filter(Boolean);
+
 
       if (!nums.length) {
+
         return api.sendMessage(
           "❌ Please provide a group number.\n\nExample: c 1",
           threadID,
           messageID
         );
+
       }
 
+
       for (const n of nums) {
+
         const index = Number(n);
+
 
         if (
           !Number.isInteger(index) ||
           index < 1 ||
           index > queue.length
         ) {
+
           return api.sendMessage(
             getLang("invalid", n),
             threadID,
             messageID
           );
+
         }
+
 
         const targetThreadID =
           queue[index - 1].threadID;
+
 
         const groupName =
           queue[index - 1].name ||
           "Unnamed Group";
 
+
         try {
+
           await api.sendMessage(
 `╭━━━━━━━━━━━━━━━━━━━━╮
        🚫 𝗔𝗖𝗖𝗘𝗦𝗦 𝗗𝗘𝗡𝗜𝗘𝗗
@@ -202,19 +299,27 @@ module.exports = {
             targetThreadID
           );
 
+
           await api.removeUserFromGroup(
             api.getCurrentUserID(),
             targetThreadID
           );
 
+
           done++;
+
+
         } catch (error) {
+
           console.log(
             `[pending] Refuse error (${targetThreadID}):`,
             error.message
           );
+
         }
+
       }
+
 
       return api.sendMessage(
         getLang(
@@ -227,42 +332,55 @@ module.exports = {
         threadID,
         messageID
       );
+
     }
 
-    // ==========================================
-    // APPROVE
-    // ==========================================
 
-    const nums = input
-      .split(/\s+/)
-      .filter(Boolean);
+    // ═════════════════════════════════════
+    // ✅ APPROVE
+    // ═════════════════════════════════════
+
+    const nums =
+      input
+        .split(/\s+/)
+        .filter(Boolean);
+
 
     for (const n of nums) {
+
       const index = Number(n);
+
 
       if (
         !Number.isInteger(index) ||
         index < 1 ||
         index > queue.length
       ) {
+
         return api.sendMessage(
           getLang("invalid", n),
           threadID,
           messageID
         );
+
       }
+
 
       const targetThreadID =
         queue[index - 1].threadID;
+
 
       const groupName =
         queue[index - 1].name ||
         "Unnamed Group";
 
+
       const botID =
         api.getCurrentUserID();
 
+
       try {
+
         await api.sendMessage(
 `╭━━━━━━━━━━━━━━━━━━━━╮
        ✨ 𝗔𝗖𝗖𝗘𝗦𝗦 𝗚𝗥𝗔𝗡𝗧𝗘𝗗
@@ -284,27 +402,39 @@ module.exports = {
           targetThreadID
         );
 
+
         try {
+
           await api.changeNickname(
             BOT_NICKNAME,
             targetThreadID,
             botID
           );
+
         } catch (error) {
+
           console.log(
             `[pending] Nickname error (${targetThreadID}):`,
             error.message
           );
+
         }
 
+
         done++;
+
+
       } catch (error) {
+
         console.log(
           `[pending] Approve error (${targetThreadID}):`,
           error.message
         );
+
       }
+
     }
+
 
     return api.sendMessage(
       getLang(
@@ -317,11 +447,13 @@ module.exports = {
       threadID,
       messageID
     );
+
   },
 
-  // ==========================================
-  // MAIN COMMAND
-  // ==========================================
+
+  // ═════════════════════════════════════
+  // 🚀 ON START
+  // ═════════════════════════════════════
 
   onStart: async function ({
     api,
@@ -329,22 +461,48 @@ module.exports = {
     getLang,
     commandName
   }) {
+
+    // 🔐 Author protection
+    if (!securityCheck()) {
+
+      console.log(
+        "❌ [pending] SECURITY BLOCK: Author was changed."
+      );
+
+      return api.sendMessage(
+        "╭━━━━━━━━━━━━━━━━━━━━╮\n" +
+        "       🔐 𝗦𝗘𝗖𝗨𝗥𝗜𝗧𝗬\n" +
+        "╰━━━━━━━━━━━━━━━━━━━━╯\n\n" +
+        "❌ This command is protected.\n" +
+        "Author was modified.\n\n" +
+        "🔒 Pending command disabled.",
+        event.threadID,
+        event.messageID
+      );
+
+    }
+
+
     const {
       threadID,
       messageID,
       senderID
     } = event;
 
+
     let text = "";
     let i = 1;
 
+
     try {
+
       const other =
         (await api.getThreadList(
           100,
           null,
           ["OTHER"]
         )) || [];
+
 
       const pending =
         (await api.getThreadList(
@@ -353,45 +511,57 @@ module.exports = {
           ["PENDING"]
         )) || [];
 
-      // Remove duplicate groups
+
       const map = new Map();
+
 
       for (const group of [
         ...other,
         ...pending
       ]) {
+
         if (
           group &&
           group.isGroup &&
           group.isSubscribed &&
           group.threadID
         ) {
+
           map.set(
             group.threadID,
             group
           );
+
         }
+
       }
 
-      const groups = [
-        ...map.values()
-      ];
+
+      const groups =
+        [...map.values()];
+
 
       if (!groups.length) {
+
         return api.sendMessage(
           getLang("empty"),
           threadID,
           messageID
         );
+
       }
 
+
       for (const group of groups) {
+
         text +=
           `╭─ ${i}. ${group.name || "Unnamed Group"}\n` +
           `╰─ 🆔 ${group.threadID}\n\n`;
 
         i++;
+
       }
+
 
       const messageBody =
         getLang(
@@ -400,17 +570,24 @@ module.exports = {
           text
         );
 
+
       return api.sendMessage(
         messageBody,
         threadID,
+
         (err, info) => {
+
           if (err) {
+
             console.log(
               "[pending] Reply registration error:",
               err
             );
+
             return;
+
           }
+
 
           global.GoatBot.onReply.set(
             info.messageID,
@@ -420,21 +597,69 @@ module.exports = {
               queue: groups
             }
           );
+
         },
+
         messageID
       );
 
+
     } catch (error) {
+
       console.error(
         "[pending] Fetch error:",
         error
       );
+
 
       return api.sendMessage(
         getLang("fetchFail"),
         threadID,
         messageID
       );
+
     }
+
   }
+
 };
+
+
+// ═════════════════════════════════════
+// 🔐 FINAL AUTHOR INTEGRITY CHECK
+// ═════════════════════════════════════
+
+if (!securityCheck()) {
+
+  console.error(
+    "╭━━━━━━━━━━━━━━━━━━━━━━━━━━━━╮\n" +
+    "       🔐 SECURITY BLOCK\n" +
+    "╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━╯\n\n" +
+    "❌ AUTHOR WAS CHANGED.\n" +
+    "🚫 pending.js has been disabled."
+  );
+
+
+  module.exports.onStart =
+    async function ({
+      api,
+      event
+    }) {
+
+      return api.sendMessage(
+        "🔐 SECURITY ERROR\n\n" +
+        "❌ Protected Author was changed.\n" +
+        "🚫 Pending command is disabled.",
+        event.threadID,
+        event.messageID
+      );
+
+    };
+
+
+  module.exports.onReply =
+    async function () {
+      return;
+    };
+
+}
