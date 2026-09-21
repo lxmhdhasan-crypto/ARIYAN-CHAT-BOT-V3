@@ -14,12 +14,14 @@ const OWNER_NAME = "ARIYAN SABBIR";
 const AUTHOR_NAME = "ARIYAN AHMED SABBIR";
 
 const WHATSAPP_NUMBER = "01937278213";
-const FACEBOOK_LINK = "https://facebook.com";
-const GITHUB_LINK = "https://github.com";
+const FACEBOOK_LINK = "https://www.facebook.com/ItsAriyanSabbir";
+const GITHUB_LINK = "https://github.com/ItsAriyan-X/ARIYAN_CHAT_BOT";
 
-const ACCESS_TOKEN =
-  process.env.FB_ACCESS_TOKEN ||
-  "6628568379%7Cc1e620fa708a1d5696fb991c1bde5662";
+/*
+   ⚠️ Token সরাসরি কোডে রাখার বদলে Replit Secrets / Environment
+   Variables-এ FB_ACCESS_TOKEN নামে রাখাই নিরাপদ।
+*/
+const ACCESS_TOKEN = process.env.FB_ACCESS_TOKEN || "6628568379%7Cc1e620fa708a1d5696fb991c1bde5662";
 
 /* =========================================================
    📁 CACHE DIRECTORY
@@ -38,7 +40,7 @@ try {
 module.exports = {
   config: {
     name: "welcome",
-    version: "9.7",
+    version: "10.0",
     author: AUTHOR_NAME,
     category: "events"
   },
@@ -49,7 +51,7 @@ module.exports = {
         "『 ᴡᴇʟᴄᴏᴍᴇ ᴛᴏ ᴛʜᴇ ᴄʟᴀɴ 』\n" +
         "━━━━━━━━━━━━━━━━━━\n" +
         "👋 ʜᴇʟʟᴏ, {userName}!\n" +
-        "🏘️ ᴡᴇʟᴄᴏᴍᴇ ᴛᴏ: ⎯꯭𝆬🫧  ⃝⃪꯭〭̈{threadName}💞⃝̽আড্ডা⤸⋆⃝✨\n" +
+        "🏘️ ᴡᴇʟᴄᴏᴍᴇ ᴛᴏ: {threadName}\n" +
         "🕒 ʜᴀᴠᴇ ᴀ ɢᴏᴏᴅ {timeState}\n\n" +
         "[ 📝 ɴᴏᴛᴇ: ᴘʟᴇᴀꜱᴇ ʀᴇᴀᴅ ᴛʜᴇ ɢʀᴏᴜᴘ ʀᴜʟᴇꜱ ᴄᴀʀᴇꜰᴜʟʟʏ ]",
 
@@ -127,7 +129,7 @@ module.exports = {
       const botID = api.getCurrentUserID();
 
       /* =====================================================
-         🕒 TIME STATE
+         🕒 TIME
       ===================================================== */
 
       const hours = new Date().getHours();
@@ -145,7 +147,7 @@ module.exports = {
       }
 
       /* =====================================================
-         👥 PROCESS ADDED MEMBERS
+         👥 PROCESS MEMBERS
       ===================================================== */
 
       for (const user of addedMembers) {
@@ -153,9 +155,9 @@ module.exports = {
 
         if (!userID) continue;
 
-        /* =====================================================
+        /* ===================================================
            🤖 BOT ADDED
-        ===================================================== */
+        =================================================== */
 
         if (String(userID) === String(botID)) {
           try {
@@ -232,9 +234,9 @@ module.exports = {
           continue;
         }
 
-        /* =====================================================
+        /* ===================================================
            👤 NEW MEMBER
-        ===================================================== */
+        =================================================== */
 
         const userName =
           user.fullName ||
@@ -245,8 +247,7 @@ module.exports = {
 
         try {
           if (Array.isArray(event.participantIDs)) {
-            memberCount =
-              event.participantIDs.length;
+            memberCount = event.participantIDs.length;
           } else if (
             threadData.participantIDs &&
             Array.isArray(threadData.participantIDs)
@@ -269,12 +270,34 @@ module.exports = {
             : getLang("defaultWelcomeMessage");
 
         welcomeMessage = String(welcomeMessage)
-          .replace(/\{userName\}/g, userName)
-          .replace(/\{userTag\}/g, userName)
-          .replace(/\{threadName\}/g, threadName)
-          .replace(/\{memberCount\}/g, memberCount)
-          .replace(/\{inviterName\}/g, inviterName)
-          .replace(/\{timeState\}/g, timeState);
+          .replace(
+            /\{userName\}/g,
+            userName
+          )
+          .replace(
+            /\{userTag\}/g,
+            userName
+          )
+          .replace(
+            /\{threadName\}/g,
+            threadName
+          )
+          .replace(
+            /\{memberCount\}/g,
+            memberCount
+          )
+          .replace(
+            /\{inviterName\}/g,
+            inviterName
+          )
+          .replace(
+            /\{timeState\}/g,
+            timeState
+          );
+
+        /* ===================================================
+           🎨 CREATE WELCOME CARD
+        =================================================== */
 
         let welcomeImagePath = null;
 
@@ -344,7 +367,9 @@ module.exports = {
                     r.status ===
                     "fulfilled"
                 )
-                .map(r => r.value);
+                .map(
+                  r => r.value
+                );
 
             if (validAttachments.length) {
               form.attachment =
@@ -360,7 +385,9 @@ module.exports = {
           fs.existsSync(welcomeImagePath)
         ) {
           setTimeout(() => {
-            safeDelete(welcomeImagePath);
+            safeDelete(
+              welcomeImagePath
+            );
           }, 10000);
         }
       }
@@ -399,9 +426,10 @@ async function downloadHighQualityProfile(userID) {
     }
 
     const url =
-      `https://facebook.com/${encodeURIComponent(userID)}` +
-      `/picture?width=800&height=800` +
-      `&access_token=${encodeURIComponent(ACCESS_TOKEN)}`;
+      `https://graph.facebook.com/${encodeURIComponent(userID)}/picture` +
+      `?width=800&height=800&access_token=${encodeURIComponent(
+        ACCESS_TOKEN
+      )}`;
 
     const res = await axios({
       method: "GET",
@@ -438,18 +466,13 @@ async function downloadImage(url) {
 }
 
 /* =========================================================
-   👥 GROUP IMAGE
+   🏠 GROUP IMAGE
 ========================================================= */
 
-async function getGroupImage(
-  threadID,
-  api
-) {
+async function getGroupImage(threadID, api) {
   try {
     const info =
-      await api.getThreadInfo(
-        threadID
-      );
+      await api.getThreadInfo(threadID);
 
     if (
       info &&
@@ -465,7 +488,7 @@ async function getGroupImage(
 }
 
 /* =========================================================
-   🔤 UNICODE TO PLAIN
+   🔤 UNICODE → PLAIN
 ========================================================= */
 
 function unicodeToPlain(str) {
@@ -538,11 +561,8 @@ function unicodeToPlain(str) {
     let mapped = false;
 
     for (
-      const [
-        start,
-        end,
-        base
-      ] of ranges
+      const [start, end, base]
+      of ranges
     ) {
       if (
         cp >= start &&
@@ -571,30 +591,23 @@ function unicodeToPlain(str) {
 }
 
 /* =========================================================
-   🔤 SAFE STRING
+   🧹 SAFE STRING
 ========================================================= */
 
 function safeStr(str) {
   if (!str) return "";
 
   try {
-    return Buffer.from(
-      String(str),
-      "latin1"
-    ).toString("utf8");
+    return Buffer
+      .from(String(str), "latin1")
+      .toString("utf8");
   } catch (_) {
     return String(str);
   }
 }
 
-function readableText(str) {
-  return unicodeToPlain(
-    safeStr(str)
-  );
-}
-
 /* =========================================================
-   ⭕ CIRCLE AVATAR
+   👤 CIRCLE AVATAR
 ========================================================= */
 
 function drawCircleAvatar(
@@ -616,8 +629,8 @@ function drawCircleAvatar(
     0,
     Math.PI * 2
   );
-  ctx.closePath();
 
+  ctx.closePath();
   ctx.clip();
 
   ctx.drawImage(
@@ -632,7 +645,7 @@ function drawCircleAvatar(
 }
 
 /* =========================================================
-   🟣 AVATAR BORDER
+   💜 AVATAR BORDER
 ========================================================= */
 
 function drawAvatarBorder(
@@ -645,18 +658,24 @@ function drawAvatarBorder(
   ctx.save();
 
   ctx.beginPath();
+
   ctx.arc(
     cx,
     cy,
-    r + 2,
+    r + 3,
     0,
     Math.PI * 2
   );
 
-  ctx.strokeStyle = "#bc25ff";
+  ctx.strokeStyle =
+    "#c026ff";
+
   ctx.lineWidth = width;
-  ctx.shadowColor = "#8b2cff";
-  ctx.shadowBlur = 15;
+
+  ctx.shadowColor =
+    "#8b2cff";
+
+  ctx.shadowBlur = 18;
 
   ctx.stroke();
 
@@ -734,6 +753,126 @@ function roundedRect(
 }
 
 /* =========================================================
+   🌈 COLORFUL USER NAME
+========================================================= */
+
+function drawColorfulName(
+  ctx,
+  text,
+  x,
+  y,
+  maxWidth = 850
+) {
+  let name = String(
+    text || "NEW MEMBER"
+  )
+    .trim()
+    .toUpperCase();
+
+  if (name.length > 25) {
+    name =
+      name.substring(0, 25) +
+      "...";
+  }
+
+  let fontSize = 42;
+
+  ctx.font =
+    `bold ${fontSize}px "Segoe UI", Arial, sans-serif`;
+
+  while (
+    ctx.measureText(name).width >
+      maxWidth &&
+    fontSize > 25
+  ) {
+    fontSize -= 2;
+
+    ctx.font =
+      `bold ${fontSize}px "Segoe UI", Arial, sans-serif`;
+  }
+
+  const textWidth =
+    ctx.measureText(name).width;
+
+  const gradient =
+    ctx.createLinearGradient(
+      x - textWidth / 2,
+      0,
+      x + textWidth / 2,
+      0
+    );
+
+  /*
+     🌈 Gradient Colors
+  */
+
+  gradient.addColorStop(
+    0,
+    "#ff4ecd"
+  );
+
+  gradient.addColorStop(
+    0.25,
+    "#c084fc"
+  );
+
+  gradient.addColorStop(
+    0.5,
+    "#60a5fa"
+  );
+
+  gradient.addColorStop(
+    0.75,
+    "#22d3ee"
+  );
+
+  gradient.addColorStop(
+    1,
+    "#f0abfc"
+  );
+
+  ctx.save();
+
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+
+  /*
+     ✨ Outer Glow
+  */
+
+  ctx.shadowColor =
+    "#c026ff";
+
+  ctx.shadowBlur = 28;
+
+  ctx.fillStyle =
+    gradient;
+
+  ctx.fillText(
+    name,
+    x,
+    y
+  );
+
+  /*
+     ✨ Stronger Glow
+  */
+
+  ctx.shadowColor =
+    "#60a5fa";
+
+  ctx.shadowBlur = 12;
+
+  ctx.fillText(
+    name,
+    x,
+    y
+  );
+
+  ctx.restore();
+}
+
+/* =========================================================
    🤖 BOT JOINED CARD
 ========================================================= */
 
@@ -759,7 +898,9 @@ async function createBotJoinedCard({
       "welcome_bg.png"
     );
 
-  if (fs.existsSync(bgPath)) {
+  if (
+    fs.existsSync(bgPath)
+  ) {
     try {
       const bg =
         await loadImage(bgPath);
@@ -794,8 +935,12 @@ async function createBotJoinedCard({
     );
   }
 
+  /*
+     Dark Overlay
+  */
+
   ctx.fillStyle =
-    "rgba(5, 2, 15, 0.55)";
+    "rgba(5, 2, 15, 0.58)";
 
   ctx.fillRect(
     0,
@@ -803,6 +948,10 @@ async function createBotJoinedCard({
     W,
     H
   );
+
+  /*
+     Header
+  */
 
   ctx.textAlign =
     "center";
@@ -837,6 +986,10 @@ async function createBotJoinedCard({
     W / 2,
     175
   );
+
+  /*
+     Information Box
+  */
 
   const boxX = 170;
   const boxY = 215;
@@ -874,13 +1027,15 @@ async function createBotJoinedCard({
     "#ffffff";
 
   ctx.fillText(
-    `👥 Group: ${readableText(threadName)}`,
+    `👥 Group: ${safeStr(threadName)}`,
     boxX + 45,
     boxY + 70
   );
 
   ctx.fillText(
-    `👤 Added by: ${readableText(inviterName)}`,
+    `👤 Added by: ${unicodeToPlain(
+      safeStr(inviterName)
+    )}`,
     boxX + 45,
     boxY + 130
   );
@@ -890,6 +1045,10 @@ async function createBotJoinedCard({
     boxX + 45,
     boxY + 190
   );
+
+  /*
+     Footer
+  */
 
   ctx.textAlign =
     "center";
@@ -904,6 +1063,18 @@ async function createBotJoinedCard({
     "Thank you for adding me to your group ❤️",
     W / 2,
     545
+  );
+
+  ctx.font =
+    'bold 18px "Arial"';
+
+  ctx.fillStyle =
+    "#c084fc";
+
+  ctx.fillText(
+    `© ${AUTHOR_NAME}`,
+    W / 2,
+    595
   );
 
   const tempPath =
@@ -970,15 +1141,6 @@ async function createWelcomeCard({
     loadProfile(inviterID)
   ]);
 
-  const safeUser =
-    readableText(userName)
-      .trim()
-      .toUpperCase();
-
-  const safeInviter =
-    readableText(inviterName)
-      .trim();
-
   /* =====================================================
      🖼️ BACKGROUND
   ===================================================== */
@@ -989,17 +1151,41 @@ async function createWelcomeCard({
       "welcome_bg.png"
     );
 
-  if (fs.existsSync(bgPath)) {
+  if (
+    fs.existsSync(bgPath)
+  ) {
     try {
       const bg =
         await loadImage(bgPath);
 
+      /*
+         Cover Background
+      */
+
+      const scale =
+        Math.max(
+          W / bg.width,
+          H / bg.height
+        );
+
+      const bgW =
+        bg.width * scale;
+
+      const bgH =
+        bg.height * scale;
+
+      const bgX =
+        (W - bgW) / 2;
+
+      const bgY =
+        (H - bgH) / 2;
+
       ctx.drawImage(
         bg,
-        0,
-        0,
-        W,
-        H
+        bgX,
+        bgY,
+        bgW,
+        bgH
       );
     } catch (_) {
       ctx.fillStyle =
@@ -1025,12 +1211,64 @@ async function createWelcomeCard({
   }
 
   /* =====================================================
-     ⭕ MEMBER AVATAR
+     🌑 DARK OVERLAY
   ===================================================== */
 
-  const avatarCX = 527;
-  const avatarCY = 412;
-  const avatarR = 68;
+  ctx.fillStyle =
+    "rgba(5, 2, 18, 0.38)";
+
+  ctx.fillRect(
+    0,
+    0,
+    W,
+    H
+  );
+
+  /* =====================================================
+     ✨ TOP WELCOME TEXT
+  ===================================================== */
+
+  ctx.textAlign =
+    "center";
+
+  ctx.font =
+    'bold 48px "Arial"';
+
+  ctx.fillStyle =
+    "#ffffff";
+
+  ctx.shadowColor =
+    "#a855f7";
+
+  ctx.shadowBlur = 22;
+
+  ctx.fillText(
+    "✦ WELCOME ✦",
+    W / 2,
+    100
+  );
+
+  ctx.shadowBlur = 0;
+
+  ctx.font =
+    'bold 24px "Arial"';
+
+  ctx.fillStyle =
+    "#e9d5ff";
+
+  ctx.fillText(
+    "WELCOME TO OUR FAMILY",
+    W / 2,
+    140
+  );
+
+  /* =====================================================
+     👤 USER AVATAR
+  ===================================================== */
+
+  const avatarCX = 600;
+  const avatarCY = 315;
+  const avatarR = 78;
 
   if (newUserImg) {
     drawCircleAvatar(
@@ -1046,73 +1284,83 @@ async function createWelcomeCard({
       avatarCX,
       avatarCY,
       avatarR,
-      4
+      5
     );
+  } else {
+    /*
+       Fallback Circle
+    */
+
+    ctx.save();
+
+    ctx.beginPath();
+
+    ctx.arc(
+      avatarCX,
+      avatarCY,
+      avatarR,
+      0,
+      Math.PI * 2
+    );
+
+    ctx.fillStyle =
+      "rgba(168, 85, 247, 0.35)";
+
+    ctx.shadowColor =
+      "#c026ff";
+
+    ctx.shadowBlur = 25;
+
+    ctx.fill();
+
+    ctx.restore();
   }
 
   /* =====================================================
-     👤 MEMBER NAME
+     🌈 COLORFUL USER NAME
+  ===================================================== */
+
+  drawColorfulName(
+    ctx,
+    userName,
+    avatarCX,
+    440,
+    850
+  );
+
+  /* =====================================================
+     👑 MEMBER NUMBER
   ===================================================== */
 
   ctx.textAlign =
     "center";
 
   ctx.font =
-    'bold 36px "Arial"';
+    'bold 21px "Arial"';
 
   ctx.fillStyle =
-    "#ffffff";
+    "#e9d5ff";
 
   ctx.shadowColor =
-    "rgba(0, 0, 0, 0.9)";
+    "#8b5cf6";
 
-  ctx.shadowBlur = 10;
-
-  let displayName =
-    safeUser ||
-    "NEW MEMBER";
-
-  if (displayName.length > 22) {
-    displayName =
-      displayName.substring(
-        0,
-        22
-      ) + "...";
-  }
-
-  ctx.fillText(
-    displayName,
-    avatarCX,
-    532
-  );
-
-  /* =====================================================
-     🔢 MEMBER COUNT
-  ===================================================== */
-
-  ctx.font =
-    'bold 20px "Arial"';
-
-  ctx.fillStyle =
-    "#e0a1ff";
-
-  ctx.shadowBlur = 5;
+  ctx.shadowBlur = 8;
 
   ctx.fillText(
     `✦ MEMBER #${memberCount} ✦`,
     avatarCX,
-    572
+    480
   );
 
   ctx.shadowBlur = 0;
 
   /* =====================================================
-     👤 INVITER PROFILE
+     👤 ADDED BY
   ===================================================== */
 
-  const inviterCX = 1090;
+  const inviterCX = 1080;
   const inviterCY = 70;
-  const inviterR = 40;
+  const inviterR = 38;
 
   if (inviterImg) {
     drawCircleAvatar(
@@ -1138,41 +1386,128 @@ async function createWelcomeCard({
     ctx.strokeStyle =
       "#bc25ff";
 
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 3;
+
+    ctx.shadowColor =
+      "#bc25ff";
+
+    ctx.shadowBlur = 10;
 
     ctx.stroke();
 
     ctx.restore();
-
-    ctx.textAlign =
-      "right";
-
-    ctx.font =
-      'bold 15px "Arial"';
-
-    ctx.fillStyle =
-      "#ffffff";
-
-    let inviterDisplay =
-      safeInviter ||
-      "Unknown";
-
-    if (
-      inviterDisplay.length > 18
-    ) {
-      inviterDisplay =
-        inviterDisplay.substring(
-          0,
-          18
-        ) + "...";
-    }
-
-    ctx.fillText(
-      `Added by ${inviterDisplay}`,
-      1030,
-      75
-    );
   }
+
+  const plainInviter =
+    unicodeToPlain(
+      safeStr(inviterName)
+    ).trim();
+
+  let inviterDisplay =
+    plainInviter || "Unknown";
+
+  if (
+    inviterDisplay.length > 18
+  ) {
+    inviterDisplay =
+      inviterDisplay.substring(
+        0,
+        18
+      ) + "...";
+  }
+
+  ctx.textAlign =
+    "right";
+
+  ctx.font =
+    'bold 16px "Arial"';
+
+  ctx.fillStyle =
+    "#ffffff";
+
+  ctx.shadowColor =
+    "#000000";
+
+  ctx.shadowBlur = 8;
+
+  ctx.fillText(
+    `Added by ${inviterDisplay}`,
+    1020,
+    75
+  );
+
+  ctx.shadowBlur = 0;
+
+  /* =====================================================
+     🏠 GROUP NAME
+  ===================================================== */
+
+  let groupDisplay =
+    safeStr(threadName);
+
+  if (
+    groupDisplay.length > 35
+  ) {
+    groupDisplay =
+      groupDisplay.substring(
+        0,
+        35
+      ) + "...";
+  }
+
+  ctx.textAlign =
+    "center";
+
+  ctx.font =
+    'bold 18px "Arial"';
+
+  ctx.fillStyle =
+    "#ddd6fe";
+
+  ctx.fillText(
+    `🏠 ${groupDisplay}`,
+    W / 2,
+    535
+  );
+
+  /* =====================================================
+     💜 BOTTOM MESSAGE
+  ===================================================== */
+
+  ctx.font =
+    'bold 20px "Arial"';
+
+  ctx.fillStyle =
+    "#f5e9ff";
+
+  ctx.shadowColor =
+    "#8b5cf6";
+
+  ctx.shadowBlur = 8;
+
+  ctx.fillText(
+    "✨ Glad to have you with us ✨",
+    W / 2,
+    575
+  );
+
+  ctx.shadowBlur = 0;
+
+  /* =====================================================
+     🤖 BOT BRANDING
+  ===================================================== */
+
+  ctx.font =
+    'bold 15px "Arial"';
+
+  ctx.fillStyle =
+    "#c084fc";
+
+  ctx.fillText(
+    `${BOT_NAME} • ${AUTHOR_NAME}`,
+    W / 2,
+    620
+  );
 
   /* =====================================================
      💾 SAVE IMAGE
